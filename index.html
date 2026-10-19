@@ -299,7 +299,7 @@ const ZONES = [
   { id:"et", flag:"🇨🇦",  tz:"America/Toronto", label:"Eastern – Toronto" },
 ];
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const GUESS = {"America/Vancouver":"van","America/Los_Angeles":"ca","America/Edmonton":"mt","America/Regina":"mt","Etc/GMT+6":"mt","America/Chicago":"ct","America/Toronto":"et","America/New_York":"et"};
+const GUESS = {"America/Vancouver":"van","America/Los_Angeles":"ca","America/Edmonton":"mt","America/Regina":"mt","Etc/GMT+6":"mt","Etc/GMT+7":"mt","America/Chicago":"ct","America/Toronto":"et","America/New_York":"et"};
 if(!GUESS[LOCAL_TZ]){ ZONES.push({ id:"local", flag:"📍", tz:LOCAL_TZ, label:"Local time ("+(/^Etc\/GMT[+-]\d+$/.test(LOCAL_TZ) ? "UTC"+(LOCAL_TZ.includes("+")?"−":"+")+LOCAL_TZ.split(/[+-]/).pop()+", fixed offset" : LOCAL_TZ.split("/").pop().replace(/_/g," "))+")" }); GUESS[LOCAL_TZ]="local"; }
 let zone = ZONES.find(z=>z.id===GUESS[LOCAL_TZ]);
 try{ const saved=localStorage.getItem("dropboard-zone"); zone=ZONES.find(z=>z.id===saved)||zone; }catch(e){}
