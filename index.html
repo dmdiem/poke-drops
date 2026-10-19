@@ -271,7 +271,7 @@ const ZONES = [
 ];
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 const GUESS = {"America/Vancouver":"van","America/Los_Angeles":"ca","America/Edmonton":"mt","America/Denver":"mt","America/Chicago":"ct","America/Toronto":"et","America/New_York":"et"};
-if(!GUESS[LOCAL_TZ]){ ZONES.push({ id:"local", flag:"📍", tz:LOCAL_TZ, label:"Local time ("+LOCAL_TZ.split("/").pop().replace(/_/g," ")+")" }); GUESS[LOCAL_TZ]="local"; }
+if(!GUESS[LOCAL_TZ]){ ZONES.push({ id:"local", flag:"📍", tz:LOCAL_TZ, label:"Local time ("+(/^Etc\/GMT[+-]\d+$/.test(LOCAL_TZ) ? "UTC"+(LOCAL_TZ.includes("+")?"−":"+")+LOCAL_TZ.split(/[+-]/).pop()+", fixed offset" : LOCAL_TZ.split("/").pop().replace(/_/g," "))+")" }); GUESS[LOCAL_TZ]="local"; }
 let zone = ZONES.find(z=>z.id===GUESS[LOCAL_TZ]);
 try{ const saved=localStorage.getItem("dropboard-zone"); zone=ZONES.find(z=>z.id===saved)||zone; }catch(e){}
 let showTZ = zone.tz;
