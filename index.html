@@ -9,22 +9,25 @@
 <title>Drop Window Board</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
-/* Layout: a departures-board header with live status, then window cards, a week grid, and a shop list. */
+/* Layout: sticker-style board in the egg mascot's palette: lime body, ink outline, coral cheek. */
 :root{
-  --bg:#EEF1F6; --surface:#FFFFFF; --fg:#151B2C; --muted:#5D6579; --line:#D6DBE6;
-  --accent:#D9412A; --accent-soft:#FBE3DE; --live:#15803D; --live-soft:#DCF3E3; --soon:#B45309; --soon-soft:#FCEBD3;
-  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --bg:#EEF7DC; --surface:#FFFFFF; --fg:#1F2A1B; --muted:#5F6F57; --line:#CFE2B5;
+  --pop:#A6E36A; --on-pop:#1F2A1B; --ink:#1F2A1B;
+  --accent:#E8604A; --accent-soft:#FCE1D9; --live:#2F8A22; --live-soft:#DBF2C6; --soon:#B96A12; --soon-soft:#FCEACB;
+  --display:"Fredoka", "Nunito", "Segoe UI", system-ui, sans-serif;
+  --body:"Nunito", "Segoe UI", system-ui, sans-serif;
   --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#10141F; --surface:#181E2C; --fg:#E7EAF2; --muted:#9AA3B8; --line:#2A3247;
-  --accent:#FF6B52; --accent-soft:#3A1F1C; --live:#4ADE80; --live-soft:#14301F; --soon:#FBBF24; --soon-soft:#3A2C10; color-scheme:dark}}
+  --bg:#131B11; --surface:#1C2719; --fg:#EAF4DD; --muted:#A1B293; --line:#34472C;
+  --pop:#8FD45A; --on-pop:#14200F; --ink:#0B1209;
+  --accent:#FF8A72; --accent-soft:#3B241E; --live:#8EDB5A; --live-soft:#1F3418; --soon:#F2B04A; --soon-soft:#3A2B12; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#10141F; --surface:#181E2C; --fg:#E7EAF2; --muted:#9AA3B8; --line:#2A3247;
-  --accent:#FF6B52; --accent-soft:#3A1F1C; --live:#4ADE80; --live-soft:#14301F; --soon:#FBBF24; --soon-soft:#3A2C10; color-scheme:dark}
+  --bg:#131B11; --surface:#1C2719; --fg:#EAF4DD; --muted:#A1B293; --line:#34472C;
+  --pop:#8FD45A; --on-pop:#14200F; --ink:#0B1209;
+  --accent:#FF8A72; --accent-soft:#3B241E; --live:#8EDB5A; --live-soft:#1F3418; --soon:#F2B04A; --soon-soft:#3A2B12; color-scheme:dark}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:980px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:grid;gap:36px}
 h1,h2{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
@@ -175,6 +178,24 @@ a.shop .info strong{font-weight:600}
 footer{color:var(--muted);font-size:13px}
 @media (prefers-reduced-motion:no-preference){.pill.live{animation:pulse 1.6s ease-in-out infinite}}
 @keyframes pulse{50%{opacity:.6}}
+
+/* Cute sticker treatment */
+h1{font-weight:700;letter-spacing:-.01em}
+h2{font-weight:700}
+.eyebrow,.pc-label,.ag-date{color:var(--muted)}
+.card,.precise,.fx,.dropform,.shopcol,.hist,.week,.tip,.ag-row,.shop{border-radius:20px;border-width:2px}
+.ag-row{border-color:var(--line)}
+.ag-row.expected{border-color:var(--accent)}
+.headline{background:var(--pop);color:var(--on-pop);border:2.5px solid var(--ink);border-radius:22px;box-shadow:4px 4px 0 var(--ink)}
+.precise{border:2.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink)}
+.btn{border-radius:999px;border-width:2px;font-weight:700}
+.btn.primary{background:var(--accent);border-color:var(--ink);color:#fff;box-shadow:2px 2px 0 var(--ink)}
+.btn.primary:active{transform:translate(2px,2px);box-shadow:none}
+.pill,.tag{border-radius:999px}
+.mascot{border-radius:0;filter:drop-shadow(3px 3px 0 var(--line))}
+@media (prefers-reduced-motion:no-preference){.mascot{animation:bob 3s ease-in-out infinite}}
+@keyframes bob{50%{transform:translateY(-6px) rotate(-2deg)}}
+select,input,textarea{border-radius:12px;border-width:2px}
 </style>
 
 <div class="wrap">
