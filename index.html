@@ -600,7 +600,7 @@ function renderTips(){
     const list=byDay[d.key].sort((a,b)=>(a.tba?Infinity:a.t)-(b.tba?Infinity:b.t));
     if(!list.length && d.i>1) return "";
     return `<div class="ag-day"><div class="ag-date">${d.label}</div>${list.length?list.map(row).join(""):`<div class="ag-empty">Nothing scheduled</div>`}</div>`;
-  }).join("") + (tipState.db?"":`<p class="note">Expected drops added by friends only show on the Claude-hosted version of this page.</p>`);
+  }).join("") + (tipState.local?`<p class="note">Drops you add here are saved in this browser only, so friends won't see them. Use Copy for Discord to share one.</p>`:"");
 }
 document.getElementById("tips").addEventListener("click",async e=>{
   const tb=e.target.closest("[data-ts]");
@@ -644,14 +644,29 @@ dForm.addEventListener("submit",async e=>{
 sel.addEventListener("change",renderTips);
 setInterval(renderTips,30000);
 renderTips();
+// Browser-only storage for copies of the board hosted outside Claude (e.g. GitHub Pages)
+const LOCAL_DB=(()=>{
+  const KEY="dropboard-local-drops", subs=[];
+  const load=()=>{ try{ return JSON.parse(localStorage.getItem(KEY)||"{}")||{}; }catch(e){ return {}; } };
+  const save=o=>{ try{ localStorage.setItem(KEY,JSON.stringify(o)); }catch(e){} };
+  const snap=()=>{ const o=load(); return {docs:Object.entries(o).map(([id,v])=>({id,exists:true,data:()=>v}))}; };
+  const emit=()=>subs.forEach(f=>f(snap()));
+  window.addEventListener("storage",e=>{ if(e.key===KEY) emit(); });
+  return { collection:()=>({
+    add:async b=>{ const o=load(), id=Date.now().toString(36)+Math.random().toString(36).slice(2,7); o[id]=b; save(o); emit(); return {id}; },
+    doc:id=>({ delete:async()=>{ const o=load(); delete o[id]; save(o); emit(); } }),
+    onSnapshot:next=>{ subs.push(next); setTimeout(()=>next(snap()),0); return ()=>{}; }
+  })};
+})();
 (async()=>{
   const tipsEl=document.getElementById("tips");
   const fail=msg=>{ tipState.db=null; renderTips(); tipsEl.insertAdjacentHTML("beforeend",`<p class="note">Expected drops couldn't load: ${escH(msg)}. Reload the page to try again.</p>`); };
   try{
     // Wait briefly for the Claude viewer bridge; absent entirely on GitHub
     for(let i=0;i<20 && !window.claude?.use;i++) await new Promise(r=>setTimeout(r,100));
-    if(!window.claude?.use){ renderTips(); return; }
-    const db=await window.claude.use("db");
+    const local=!window.claude?.use;
+    tipState.local=local;
+    const db=local?LOCAL_DB:await window.claude.use("db");
     if(!db){ fail("the shared list isn't available in this view"); return; }
     tipState.db=db;
     let user=null; try{ user=await window.claude.use("user"); }catch(_){}
