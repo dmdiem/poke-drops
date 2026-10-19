@@ -1,0 +1,644 @@
+<title>Drop Window Board</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a departures-board header with live status, then window cards, a week grid, and a shop list. */
+:root{
+  --bg:#EEF1F6; --surface:#FFFFFF; --fg:#151B2C; --muted:#5D6579; --line:#D6DBE6;
+  --accent:#D9412A; --accent-soft:#FBE3DE; --live:#15803D; --live-soft:#DCF3E3; --soon:#B45309; --soon-soft:#FCEBD3;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10141F; --surface:#181E2C; --fg:#E7EAF2; --muted:#9AA3B8; --line:#2A3247;
+  --accent:#FF6B52; --accent-soft:#3A1F1C; --live:#4ADE80; --live-soft:#14301F; --soon:#FBBF24; --soon-soft:#3A2C10; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10141F; --surface:#181E2C; --fg:#E7EAF2; --muted:#9AA3B8; --line:#2A3247;
+  --accent:#FF6B52; --accent-soft:#3A1F1C; --live:#4ADE80; --live-soft:#14301F; --soon:#FBBF24; --soon-soft:#3A2C10; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 56px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:grid;gap:36px}
+h1,h2{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.1}
+h1{font-size:clamp(28px,6vw,44px);font-weight:800;letter-spacing:-.02em}
+h2{font-size:22px;font-weight:600}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+a{color:var(--accent)}
+header{display:grid;gap:14px}
+.clock{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;color:var(--muted)}
+.clock b{font-family:var(--mono);color:var(--fg);font-size:18px;font-variant-numeric:tabular-nums}
+.headline{background:var(--fg);color:var(--bg);border-radius:14px;padding:18px 20px;display:flex;flex-wrap:wrap;gap:10px 24px;align-items:center;justify-content:space-between}
+.headline .what{font-family:var(--display);font-size:20px;font-weight:600;min-width:0}
+.headline .t{font-family:var(--mono);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.section{display:grid;gap:14px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:10px;align-content:start}
+.card-top{display:flex;justify-content:space-between;gap:10px;align-items:start}
+.card h3{margin:0;font-family:var(--display);font-size:18px;font-weight:600}
+.region{font-size:13px;color:var(--muted);font-weight:600;display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:2px}
+.flagtag{display:inline-flex;align-items:center;gap:5px}
+.flag{width:19px;height:10px;border-radius:2px;box-shadow:0 0 0 1px var(--line);flex:none}
+.pill{font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap;background:var(--bg);color:var(--muted)}
+.pill.live{background:var(--live-soft);color:var(--live)}
+.pill.soon{background:var(--soon-soft);color:var(--soon)}
+.when{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums}
+.count{font-family:var(--mono);font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.note{color:var(--muted);font-size:14px;margin:0}
+.links{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--fg);border-radius:8px;padding:6px 11px;font:inherit;font-size:14px;font-weight:500;text-decoration:none;cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.week{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.week table{width:100%;border-collapse:collapse;min-width:520px}
+.week th,.week td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top;font-size:14px}
+.week tr:last-child td{border-bottom:0}
+.week th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.week tr.today td{background:var(--accent-soft)}
+.week td.day{font-weight:600;width:110px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;border:1px solid var(--line);border-radius:6px;padding:2px 8px;background:var(--surface)}
+.chip span{font-family:var(--mono);color:var(--muted);font-size:12px}
+.empty{color:var(--muted)}
+form.add{display:grid;grid-template-columns:1fr 1.4fr 1fr auto;gap:8px}
+@media (max-width:640px){form.add{grid-template-columns:1fr}}
+input,textarea{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:8px 10px;min-width:0}
+textarea{width:100%;box-sizing:border-box;min-height:90px;font-family:var(--mono);font-size:12px}
+.shops{display:grid;gap:8px}
+.shop{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 14px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.shop .info{min-width:0;display:grid}
+.shop .info a{font-weight:600;overflow-wrap:anywhere}
+.shop .info small{color:var(--muted);overflow-wrap:anywhere}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.status{font-size:13px;color:var(--muted)}
+details summary{cursor:pointer;color:var(--muted);font-size:14px}
+.tzbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-weight:500}
+select{font:inherit;font-size:15px;font-weight:600;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;padding:7px 10px;max-width:100%}
+.hist{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 18px 12px}
+.track{position:relative;height:34px;border-bottom:2px solid var(--line)}
+.dot{position:absolute;bottom:-7px;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:var(--accent);opacity:.85;box-shadow:0 0 0 2px var(--surface)}
+.dot.past{background:var(--muted);opacity:.45}
+.dot.next{width:16px;height:16px;margin-left:-8px;bottom:-9px;opacity:1;box-shadow:0 0 0 3px var(--accent-soft)}
+.nowline{position:absolute;top:0;bottom:-8px;width:2px;background:var(--fg)}
+.nowline span{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:11px;font-weight:700;white-space:nowrap}
+.axis{position:relative;height:24px;margin-top:8px}
+.axis span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.chip.past{opacity:.5}
+.chip.expected{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.chip.next{border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.shopcols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px;align-items:start}
+.shopcol{display:grid;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.shopcol summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.shopcol summary::-webkit-details-marker{display:none}
+.shopcol summary::after{content:"Show";font-size:13px;color:var(--accent);font-weight:600}
+.shopcol[open] summary::after{content:"Hide"}
+.shopcol[open] summary{margin-bottom:10px}
+.shopcol a.shop{background:var(--bg)}
+.shopcol h3{margin:0;font-family:var(--display);font-size:17px;font-weight:600;gap:8px}
+.shopcol .flag{width:24px;height:13px}
+.count-sm{font-family:var(--mono);font-size:12px;color:var(--muted);font-weight:500}
+a.shop{text-decoration:none;color:var(--fg)}
+a.shop:hover{border-color:var(--accent)}
+a.shop .info strong{font-weight:600}
+.shipwrap{display:inline-flex;align-items:center;gap:10px}
+.ship{font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--live-soft);color:var(--live);white-space:nowrap}
+.ship.limited{background:var(--soon-soft);color:var(--soon)}
+.sechead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.dropform{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.dropform .wide{grid-column:1/-1}
+.field{display:grid;gap:4px;min-width:0}
+.field label{font-size:13px;font-weight:600}
+.field small{color:var(--muted);font-size:12px}
+.tips{display:grid;gap:8px}
+.tip{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.tip.now{border-color:var(--live)}
+.tip .main{display:grid;gap:2px;min-width:0}
+.tip .main strong{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.tip .main small{color:var(--muted);overflow-wrap:anywhere}
+.tip .side{display:flex;align-items:center;gap:10px}
+.precise{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 18px;display:grid;gap:4px;transition:border-color .15s,background .15s}
+.pc-top{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+#msToggle{font-size:13px;padding:4px 10px}
+#msToggle[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.pc-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.pc-time{font-family:var(--mono);font-size:clamp(34px,9vw,56px);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;letter-spacing:-.01em}
+.pc-time small{font-size:.4em;color:var(--muted);margin-left:8px}
+.pc-sub{display:flex;flex-wrap:wrap;gap:4px 16px;justify-content:space-between;font-size:14px}
+#pNext{font-family:var(--mono);font-weight:700;font-variant-numeric:tabular-nums}
+.pc-hint{color:var(--muted)}
+.precise.ready{border-color:var(--soon);background:var(--soon-soft)}
+.precise.ready #pNext{color:var(--soon)}
+.precise.go{border-color:var(--live);background:var(--live-soft)}
+.precise.go #pNext{color:var(--live)}
+.fx{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;gap:12px}
+.fx-row{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:end}
+.fx-row input{font-family:var(--mono);font-size:20px;font-weight:700;padding:10px 12px}
+.fx-eq{font-family:var(--mono);font-size:22px;color:var(--muted);padding-bottom:10px}
+.fx-rate{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:14px}
+.fx-rate input{width:7em;font-family:var(--mono)}
+.week td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.week td small{color:var(--muted)}
+.agenda{display:grid;gap:18px}
+.ag-day{display:grid;gap:6px}
+.ag-date{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.ag-row{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:start;padding:10px 12px;border-radius:10px;background:var(--surface);border:1px solid var(--line)}
+.ag-row.expected{border-style:dashed;border-color:var(--accent)}
+.ag-row.live{border-color:var(--live);border-style:solid;background:var(--live-soft)}
+.ag-time{font-family:var(--mono);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;display:grid}
+.ag-time small{font-weight:500;color:var(--muted);font-size:12px}
+.ag-main{display:grid;gap:4px;min-width:0}
+.ag-name{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-weight:600}
+.ag-name a{color:var(--fg);text-decoration:none}
+.ag-name a:hover{color:var(--accent);text-decoration:underline}
+.ag-links{display:inline-flex;gap:10px;font-size:13px;font-weight:500}
+.ag-links a{color:var(--accent)}
+.ag-main small{color:var(--muted);overflow-wrap:anywhere}
+.ag-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.btn.sm{font-size:12px;padding:3px 9px}
+.tag{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:1px 6px}
+.tag.guaranteed{color:var(--live);background:var(--live-soft)}
+.tag.random{color:var(--soon);background:var(--soon-soft)}
+.card h3 .tag{vertical-align:middle;margin-left:4px}
+.ag-empty{color:var(--muted);font-size:14px;padding:4px 2px}
+@media (max-width:520px){.ag-row{grid-template-columns:72px 1fr}.ag-side{grid-column:2}}
+footer{color:var(--muted);font-size:13px}
+@media (prefers-reduced-motion:no-preference){.pill.live{animation:pulse 1.6s ease-in-out infinite}}
+@keyframes pulse{50%{opacity:.6}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Card drop tracker · US + Canada</div>
+    <h1>Drop Window Board</h1>
+    <div class="tzbar">
+      <label for="tzSelect">Showing times in</label>
+      <select id="tzSelect"></select>
+    </div>
+    <div class="precise" id="precise">
+      <div class="pc-top"><div class="pc-label">Exact time <span id="pZone"></span></div><button class="btn" type="button" id="msToggle" aria-pressed="false">Show milliseconds</button></div>
+      <div class="pc-time" id="pClock" aria-live="off">--:--:--.---</div>
+      <div class="pc-sub"><span id="pNext">Next even minute in --</span><span class="pc-hint">Walmart Canada high-demand items: tap Add to cart at :59.50 on an odd minute</span></div>
+    </div>
+    <div class="headline" id="headline"><div class="what">Loading windows…</div></div>
+  </header>
+
+  <section class="section">
+    <div class="sechead"><h2>Coming up</h2><button class="btn primary" type="button" id="addDropBtn" hidden>Add expected drop</button></div>
+    <form class="dropform" id="dropForm" hidden>
+      <div class="field"><label for="dRetailer">Retailer</label><select id="dRetailer"></select></div>
+      <div class="field"><label for="dDate">Date</label><input type="date" id="dDate" required></div>
+      <div class="field"><label for="dTime">Time <span id="dTz"></span></label><input type="time" id="dTime"><small>Leave blank if unknown</small></div>
+      <div class="field wide"><label for="dNote">Note</label><input id="dNote" maxlength="200" placeholder="Where you heard it, raffle link, what's dropping"></div>
+      <div class="row wide"><button class="btn primary" type="submit">Save drop</button><button class="btn" type="button" id="dCancel">Cancel</button><span class="status" id="dStatus"></span></div>
+    </form>
+    <div class="agenda" id="tips"><p class="note">Loading…</p></div>
+  </section>
+
+  <section class="section">
+    <h2>Drop windows</h2>
+    <div class="cards" id="cards"></div>
+  </section>
+
+  <section class="section">
+    <h2>Past Pokémon Center queue times</h2>
+    <p class="note" id="histNote">Times queues have gone up before.</p>
+    <div class="hist">
+      <div class="track" id="track"></div>
+      <div class="axis" id="axis"></div>
+    </div>
+    <div class="chips" id="histChips"></div>
+  </section>
+
+
+  <section class="section">
+    <h2>Card shops</h2>
+    <div class="shopcols" id="shopCols"></div>
+  </section>
+
+  <section class="section" id="prices">
+    <h2>MSRP &amp; currency</h2>
+    <p class="note">Standard prices for current Mega Evolution sets, checked Oct 19, 2026. Retailers sometimes shelf-price higher, and special sets can cost more.</p>
+    <div class="week"><table>
+      <thead><tr><th>Product</th><th>Packs</th><th>US MSRP</th><th>US price in CAD</th><th>Canada MSRP</th></tr></thead>
+      <tbody id="msrpRows"></tbody>
+    </table></div>
+    <div class="fx">
+      <div class="fx-row">
+        <div class="field"><label for="fxCad">CAD</label><input id="fxCad" type="number" inputmode="decimal" min="0" step="0.01" value="67.99"></div>
+        <div class="fx-eq" aria-hidden="true">=</div>
+        <div class="field"><label for="fxUsd">USD</label><input id="fxUsd" type="number" inputmode="decimal" min="0" step="0.01"></div>
+      </div>
+      <div class="fx-rate"><label for="fxRate">1 CAD =</label><input id="fxRate" type="number" min="0" step="0.0001" value="0.7093"><span>USD</span><span class="status" id="fxNote">Rate from Oct 2026. Edit it if the rate has moved.</span></div>
+    </div>
+  </section>
+
+  <footer>Windows are community patterns, not official schedules. Drops can land outside them. All times are shown in the time zone you pick.</footer>
+</div>
+
+<script>
+const MT = "America/Edmonton";
+const DAY = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+// Edit these to change the schedule. Days: 0 = Sunday … 6 = Saturday. Times are Calgary time, 24h.
+const WINDOWS = [
+  { id:"pc", certainty:"random", name:"Pokémon Center", region:["us","ca"], days:[1,2,3,4,5], start:"08:15", end:"12:15",
+    note:"Weekday drops. Past queues have gone up anywhere in this window, most often mid-morning.",
+    links:[["Pokémon Center CA","https://www.pokemoncenter.com/en-ca"],["Pokémon Center US","https://www.pokemoncenter.com/en-us"]] },
+  { id:"wm", certainty:"guaranteed", name:"Walmart Wednesday", region:["us"], days:[3], start:"15:00", end:"16:00",
+    note:"Usually a raffle entry now. Opens around {15:00} for about an hour.",
+    links:[["Walmart US","https://www.walmart.com/search?q=pokemon+cards"]] },
+  { id:"tg", certainty:"guaranteed", name:"Target overnight", region:["us"], days:[2,4], start:"01:00", end:"03:00",
+    note:"Overnight, Monday night into Tuesday and Wednesday night into Thursday. On Oct 16, restocks ran {01:25}–{02:30}, about one item every 5–10 minutes.",
+    links:[["Target","https://www.target.com/s?searchTerm=pokemon+cards"]] },
+];
+const RANDOM = { name:"Walmart Canada", region:["ca"], note:"No set pattern. Restocks show up at random, so lean on alerts.",
+  links:[["Walmart CA","https://www.walmart.ca/en/search?q=pokemon%20cards"]] };
+
+const ZONES = [
+  { id:"van", flag:"🇨🇦", tz:"Etc/GMT+7", label:"Pacific – Vancouver", fixed:"UTC−7 year-round" },
+  { id:"ca", flag:"🇺🇸",  tz:"America/Los_Angeles", label:"Pacific – California" },
+  { id:"mt", flag:"🇨🇦",  tz:"America/Edmonton", label:"Mountain – Calgary" },
+  { id:"ct", flag:"🇺🇸",  tz:"America/Chicago", label:"Central – Texas" },
+  { id:"et", flag:"🇨🇦",  tz:"America/Toronto", label:"Eastern – Toronto" },
+];
+const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const GUESS = {"America/Vancouver":"van","America/Los_Angeles":"ca","America/Edmonton":"mt","America/Denver":"mt","America/Chicago":"ct","America/Toronto":"et","America/New_York":"et"};
+if(!GUESS[LOCAL_TZ]){ ZONES.push({ id:"local", flag:"📍", tz:LOCAL_TZ, label:"Local time ("+LOCAL_TZ.split("/").pop().replace(/_/g," ")+")" }); GUESS[LOCAL_TZ]="local"; }
+let zone = ZONES.find(z=>z.id===GUESS[LOCAL_TZ]);
+try{ const saved=localStorage.getItem("dropboard-zone"); zone=ZONES.find(z=>z.id===saved)||zone; }catch(e){}
+let showTZ = zone.tz;
+
+const toMin = s => { const [h,m]=s.split(":").map(Number); return h*60+m; };
+function parts(date,tz){
+  const p=Object.fromEntries(new Intl.DateTimeFormat("en-US",{timeZone:tz,year:"numeric",month:"numeric",day:"numeric",weekday:"short",hour:"2-digit",minute:"2-digit",hourCycle:"h23"})
+    .formatToParts(date).map(x=>[x.type,x.value]));
+  return {y:+p.year,mo:+p.month,d:+p.day,h:+p.hour,mi:+p.minute,wd:SHORT.indexOf(p.weekday)};
+}
+// Calgary wall-clock time -> real instant (handles daylight saving)
+function mtToDate(y,mo,d,min){
+  const want=Date.UTC(y,mo-1,d,Math.floor(min/60),min%60); let t=want;
+  for(let i=0;i<3;i++){ const p=parts(new Date(t),MT); t += want-Date.UTC(p.y,p.mo-1,p.d,p.h,p.mi); }
+  return t;
+}
+function occurrences(){
+  const t=parts(new Date(),MT), out=[];
+  for(let i=-1;i<=9;i++){
+    const b=new Date(Date.UTC(t.y,t.mo-1,t.d+i)), y=b.getUTCFullYear(), mo=b.getUTCMonth()+1, d=b.getUTCDate(), wd=b.getUTCDay();
+    for(const w of WINDOWS) if(w.days.includes(wd)){
+      const s=toMin(w.start), e=toMin(w.end);
+      out.push({w, start:mtToDate(y,mo,d,s), end:mtToDate(y,mo,d+(e<=s?1:0),e)});
+    }
+  }
+  return out.sort((a,b)=>a.start-b.start);
+}
+const fTime = t => new Intl.DateTimeFormat("en-US",{timeZone:showTZ,hour:"numeric",minute:"2-digit"}).format(t);
+const fWd = t => parts(new Date(t),showTZ).wd;
+const tzName = () => zone.fixed ? "UTC−7" : new Intl.DateTimeFormat("en-US",{timeZone:showTZ,timeZoneName:"short"}).formatToParts(new Date()).find(x=>x.type==="timeZoneName").value;
+function dur(s){ s=Math.max(0,Math.floor(s)); const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60), x=s%60;
+  if(d) return d+"d "+h+"h "+m+"m"; if(h) return h+"h "+String(m).padStart(2,"0")+"m"; return m+"m "+String(x).padStart(2,"0")+"s"; }
+function daysLabel(ds){
+  ds=[...new Set(ds)].sort((a,b)=>((a+6)%7)-((b+6)%7));
+  const k=ds.join(); const runs={"1,2,3,4,5":"Mon–Fri","0,1,2,3,4":"Sun–Thu","2,3,4,5,6":"Tue–Sat"};
+  return runs[k]||ds.map(d=>SHORT[d]).join(" & ");
+}
+const FLAG_SVG = {
+  us:`<svg class="flag" viewBox="0 0 19 10" aria-hidden="true"><rect width="19" height="10" fill="#B22234"/><g fill="#fff"><rect y="0.77" width="19" height="0.77"/><rect y="2.31" width="19" height="0.77"/><rect y="3.85" width="19" height="0.77"/><rect y="5.38" width="19" height="0.77"/><rect y="6.92" width="19" height="0.77"/><rect y="8.46" width="19" height="0.77"/></g><rect width="7.6" height="5.38" fill="#3C3B6E"/><g fill="#fff"><circle cx="1.5" cy="1.2" r=".35"/><circle cx="3.8" cy="1.2" r=".35"/><circle cx="6.1" cy="1.2" r=".35"/><circle cx="2.65" cy="2.7" r=".35"/><circle cx="4.95" cy="2.7" r=".35"/><circle cx="1.5" cy="4.2" r=".35"/><circle cx="3.8" cy="4.2" r=".35"/><circle cx="6.1" cy="4.2" r=".35"/></g></svg>`,
+  ca:`<svg class="flag" viewBox="0 0 20 10" aria-hidden="true"><rect width="20" height="10" fill="#fff"/><rect width="5" height="10" fill="#D52B1E"/><rect x="15" width="5" height="10" fill="#D52B1E"/><path fill="#D52B1E" d="M10 1.4l.7 1.4.8-.4-.3 1.9 1-.9.2.6 1.2-.2-.4 1.2.5.3-2 1.6.2.7-1.6-.2v1.8h-.6V7.4l-1.6.2.2-.7-2-1.6.5-.3-.4-1.2 1.2.2.2-.6 1 .9-.3-1.9.8.4z"/></svg>`
+};
+const NAMES={us:"US",ca:"Canada"};
+const certTag=c=>c?`<span class="tag ${c}" title="${c==="guaranteed"?"Drops in this window most weeks":"Drops on some days in this window, not every day"}">${c==="guaranteed"?"Guaranteed":"Random"}</span>`:"";
+const flags = r => r.map(c=>`<span class="flagtag">${FLAG_SVG[c]}${NAMES[c]}</span>`).join("");
+function linkHTML(links){ return links.map(([t,u])=>`<a class="btn" href="${u}" target="_blank" rel="noopener">${t} ↗</a>`).join(""); }
+
+document.getElementById("cards").innerHTML = WINDOWS.map(w=>`
+  <article class="card" id="c-${w.id}">
+    <div class="card-top"><div><h3>${w.name} ${certTag(w.certainty)}</h3><div class="region">${flags(w.region)}</div></div><span class="pill" data-pill>…</span></div>
+    <div class="when" data-when>--</div>
+    <div><div class="eyebrow" data-lbl>Starts in</div><div class="count" data-count>--</div></div>
+    <p class="note" data-note>${w.note}</p>
+    <div class="links">${linkHTML(w.links)}</div>
+  </article>`).join("") + `
+  <article class="card">
+    <div class="card-top"><div><h3>${RANDOM.name} ${certTag("random")}</h3><div class="region">${flags(RANDOM.region)}</div></div><span class="pill">RANDOM</span></div>
+    <div class="when">Any day · any time</div>
+    <div><div class="eyebrow">Starts in</div><div class="count">Unknown</div></div>
+    <p class="note">${RANDOM.note}</p>
+    <div class="links">${linkHTML(RANDOM.links)}</div>
+  </article>`;
+
+const sel=document.getElementById("tzSelect");
+sel.innerHTML=ZONES.map(z=>`<option value="${z.id}">${z.flag} ${z.label}${z.id===GUESS[LOCAL_TZ]?" (your time zone)":""}</option>`).join("");
+sel.value=zone.id;
+sel.addEventListener("change",()=>{ zone=ZONES.find(z=>z.id===sel.value); showTZ=zone.tz; try{ localStorage.setItem("dropboard-zone",zone.id); }catch(e){} lastKey=""; tick(); });
+let occ=occurrences(), lastKey="";
+function renderStatic(){
+  const now=Date.now(), zone=tzName();
+  for(const w of WINDOWS){
+    const mine=occ.filter(o=>o.w===w && o.end>now), week=mine.filter(o=>o.start<now+7*864e5), n=mine[0];
+    { const t=parts(new Date(),MT); document.querySelector(`#c-${w.id} [data-note]`).textContent = w.note.replace(/\{(\d\d:\d\d)\}/g,(_,hm)=>fTime(mtToDate(t.y,t.mo,t.d,toMin(hm)))); }
+    if(!n) continue;
+    document.querySelector(`#c-${w.id} [data-when]`).textContent = daysLabel(week.map(o=>fWd(o.start)))+" · "+fTime(n.start)+" – "+fTime(n.end)+" "+zone;
+  }
+
+  const today=parts(new Date(),showTZ), rows=[];
+  for(let i=0;i<7;i++){
+    const b=new Date(Date.UTC(today.y,today.mo-1,today.d+i)), key=b.getUTCFullYear()+"-"+b.getUTCMonth()+"-"+b.getUTCDate(), wd=b.getUTCDay();
+    const hits=occ.filter(o=>{ const p=parts(new Date(o.start),showTZ); return p.y+"-"+(p.mo-1)+"-"+p.d===key; });
+    const items=hits.map(o=>({t:o.start, html:`<span class="chip">${o.w.name} <span>${fTime(o.start)}–${fTime(o.end)}</span></span>`}));
+    for(const x of (window.__tipDocs||[])){
+      if(typeof x.at!=="number") continue;
+      let match;
+      if(x.tba){ const [ty,tm,td]=String(x.date||"").split("-").map(Number); match=ty+"-"+(tm-1)+"-"+td===key; }
+      else { const p=parts(new Date(x.at),showTZ); match=p.y+"-"+(p.mo-1)+"-"+p.d===key; }
+      if(!match) continue;
+      const nm=String(x.retailer||"Expected drop").replace(/[&<>"']/g,"");
+      items.push({t:x.tba?Infinity:x.at, html:`<span class="chip expected">${nm} (expected) <span>${x.tba?"time TBA":fTime(x.at)}</span></span>`});
+    }
+    items.sort((a,b)=>a.t-b.t);
+    const chips=items.length?items.map(i=>i.html).join(""):`<span class="empty">No set windows</span>`;
+    rows.push(`<tr class="${i===0?"today":""}"><td class="day">${DAY[wd]}${i===0?" · today":""}</td><td><div class="chips">${chips}</div></td></tr>`);
+  }
+
+}
+
+function tick(){
+  const now=Date.now(), clk=tz=>new Intl.DateTimeFormat("en-US",{timeZone:tz,weekday:"short",hour:"numeric",minute:"2-digit",second:"2-digit"}).format(now);
+
+  const key=showTZ+"|"+new Date(now).toDateString()+"|"+Math.floor(now/36e5);
+  if(key!==lastKey){ occ=occurrences(); renderStatic(); lastKey=key; }
+  let live=[], soonest=null;
+  for(const w of WINDOWS){
+    const c=document.getElementById("c-"+w.id), pill=c.querySelector("[data-pill]"), lbl=c.querySelector("[data-lbl]"), cnt=c.querySelector("[data-count]");
+    const cur=occ.find(o=>o.w===w && o.start<=now && now<o.end);
+    if(cur){ const left=(cur.end-now)/1000; pill.textContent="LIVE"; pill.className="pill live"; lbl.textContent="Window closes in"; cnt.textContent=dur(left); live.push([w,left]); continue; }
+    const nx=occ.find(o=>o.w===w && o.start>now); if(!nx) continue;
+    const until=(nx.start-now)/1000, soon=until<3*3600, sameDay=fWd(nx.start)===fWd(now) && until<864e2;
+    pill.textContent=soon?"SOON":"CLOSED"; pill.className="pill"+(soon?" soon":"");
+    lbl.textContent="Opens "+(sameDay?"today":DAY[fWd(nx.start)])+" at "+fTime(nx.start)+" · in"; cnt.textContent=dur(until);
+    if(!soonest||until<soonest[1]) soonest=[w,until];
+  }
+  const h=document.getElementById("headline");
+  if(live.length){ live.sort((a,b)=>a[1]-b[1]); h.innerHTML=`<div class="what">${live.map(x=>x[0].name).join(" + ")} window is open</div><div class="t">closes in ${dur(live[0][1])}</div>`; }
+  else {
+    const tips=(window.__tipDocs||[]).filter(x=>!x.tba&&typeof x.at==="number");
+    const tipLive=tips.filter(x=>x.at<=now&&now<x.at+3*36e5).sort((a,b)=>b.at-a.at)[0];
+    const tipNext=tips.filter(x=>x.at>now).sort((a,b)=>a.at-b.at)[0];
+    const tipName=x=>String(x.retailer||"Expected drop").replace(/[&<>]/g,"")+" expected drop";
+    if(tipLive){ h.innerHTML=`<div class="what">${tipName(tipLive)} may be live</div><div class="t">started ${dur((now-tipLive.at)/1000)} ago</div>`; }
+    else if(tipNext && (!soonest || (tipNext.at-now)/1000 < soonest[1])){ h.innerHTML=`<div class="what">Next up: ${tipName(tipNext)}</div><div class="t">${dur((tipNext.at-now)/1000)}</div>`; }
+    else if(soonest){ h.innerHTML=`<div class="what">Next up: ${soonest[0].name}</div><div class="t">${dur(soonest[1])}</div>`; }
+  }
+}
+// Past Pokémon Center queue times, Calgary time
+const HISTORIC = ["08:18","09:08","09:12","09:26","09:36","09:45","10:11","10:13","10:38","10:39","11:08","11:11","11:20","11:38","12:13"].map(toMin);
+const T0=8*60, T1=12*60+30, pos=m=>((m-T0)/(T1-T0)*100).toFixed(2)+"%";
+let histKey="";
+function renderHist(){
+  const now=Date.now(), t=parts(new Date(),MT);
+  let day=null;
+  for(let i=0;i<8 && !day;i++){
+    const b=new Date(Date.UTC(t.y,t.mo-1,t.d+i)), wd=b.getUTCDay(); if(wd<1||wd>5) continue;
+    const y=b.getUTCFullYear(), mo=b.getUTCMonth()+1, d=b.getUTCDate();
+    if(i===0 && now>mtToDate(y,mo,d,HISTORIC[HISTORIC.length-1])) continue;
+    day={y,mo,d,wd,today:i===0};
+  }
+  const times=HISTORIC.map(m=>({m,at:mtToDate(day.y,day.mo,day.d,m)}));
+  const nextIdx=times.findIndex(x=>x.at>now);
+  document.getElementById("histNote").textContent=(day.today?"Today":"Next weekday ("+DAY[day.wd]+")")+", shown in "+zone.label+" ("+tzName()+"). Each dot is a time a queue has gone up before.";
+  document.getElementById("track").innerHTML=times.map((x,i)=>`<span class="dot ${day.today&&i<nextIdx?"past":""} ${i===nextIdx?"next":""}" style="left:${pos(x.m)}" title="${fTime(x.at)}"></span>`).join("")
+    + (day.today ? (()=>{ const p=parts(new Date(),MT), m=p.h*60+p.mi; return m>=T0&&m<=T1?`<span class="nowline" style="left:${pos(m)}"><span>now</span></span>`:""; })() : "");
+  document.getElementById("axis").innerHTML=[8,9,10,11,12].map(h=>`<span style="left:${pos(h*60)}">${fTime(mtToDate(day.y,day.mo,day.d,h*60)).replace(":00","")}</span>`).join("");
+  document.getElementById("histChips").innerHTML=times.map((x,i)=>`<span class="chip ${day.today&&i<nextIdx?"past":""} ${i===nextIdx?"next":""}">${i===nextIdx?"Next likely · ":""}${fTime(x.at)}</span>`).join("");
+}
+const _tick=tick;
+tick=function(){ _tick(); const k=zone.id+"|"+Math.floor(Date.now()/6e4); if(k!==histKey){ histKey=k; renderHist(); } };
+tick(); setInterval(tick,1000);
+// Card shops. Add more here: { name, url, note }
+const SHOPS = {
+  ca: [
+    { name:"Happy TCG", url:"https://happytcg.ca", ship:"Free shipping over $200" },
+    { name:"Yume Cards", url:"https://yumecards.ca", ship:"Free shipping over $200" },
+    { name:"Caps Collectibles", url:"https://capscollectibles.ca", ship:"Free over $250, Ontario only", limited:true },
+    { name:"Springer Hobbies", url:"https://springerhobbies.com", ship:"Free shipping over $200" },
+    { name:"Taps Games", url:"https://tapsgames.com", note:"Edmonton, AB", ship:"Free over $75 in AB, BC, SK" },
+    { name:"Monnaie Canada", url:"https://www.monnaiecanada.online", note:"Sherbrooke, QC", ship:"Free shipping over $500" },
+    { name:"SCAF Express", url:"https://scafexpress.ca", note:"Discounted shipping over $300", ship:"Free shipping over $500" },
+    { name:"Shikdar Trading", url:"https://shikdartrading.ca", ship:"Free shipping over $200" },
+    { name:"Turtle TCG", url:"https://turtletcg.ca", ship:"Free shipping over $250" },
+  ],
+  us: [],
+};
+// Cheapest free-shipping threshold first; region-limited and unknown ones last
+const threshold=x=>{ const m=x.ship&&x.ship.match(/\$(\d+)/); return x.limited||!m ? Infinity : +m[1]; };
+const byThreshold=list=>[...list].sort((a,b)=>threshold(a)-threshold(b)||a.name.localeCompare(b.name));
+const host=u=>u.replace(/^https?:\/\//,"").replace(/\/$/,"");
+document.getElementById("shopCols").innerHTML=["ca","us"].map(c=>`
+  <details class="shopcol">
+    <summary><h3 class="flagtag">${FLAG_SVG[c]}${NAMES[c]} <span class="count-sm">${SHOPS[c].length} shops</span></h3></summary>
+    ${SHOPS[c].length ? `<div class="shops">${byThreshold(SHOPS[c]).map(x=>`<a class="shop" href="${x.url}" target="_blank" rel="noopener"><span class="info"><strong>${x.name}</strong><small>${host(x.url)}${x.note?" · "+x.note:""}</small></span><span class="shipwrap">${x.ship?`<span class="ship ${x.limited?"limited":""}">${x.ship}</span>`:""}<span aria-hidden="true">↗</span></span></a>`).join("")}</div>`
+      : `<p class="note">No ${NAMES[c]} shops listed yet.</p>`}
+  </details>`).join("");
+
+// Exact clock with milliseconds, plus countdown to the next even minute
+(function(){
+  const clockEl=document.getElementById("pClock"), nextEl=document.getElementById("pNext"), box=document.getElementById("precise"), zEl=document.getElementById("pZone");
+  let lastZone="", showMs=false;
+  try{ showMs=localStorage.getItem("dropboard-ms")==="1"; }catch(e){}
+  const msBtn=document.getElementById("msToggle");
+  const syncBtn=()=>{ msBtn.setAttribute("aria-pressed",showMs); msBtn.textContent=showMs?"Hide milliseconds":"Show milliseconds"; };
+  msBtn.onclick=()=>{ showMs=!showMs; try{ localStorage.setItem("dropboard-ms",showMs?"1":"0"); }catch(e){} syncBtn(); };
+  syncBtn();
+  function frame(){
+    const now=Date.now();
+    if(zone.id!==lastZone){ zEl.textContent="· "+zone.label+" ("+(zone.fixed?"UTC−7, no clock changes":tzName())+")"; lastZone=zone.id; }
+    const f=new Intl.DateTimeFormat("en-US",{timeZone:showTZ,hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true}).formatToParts(now);
+    const g=t=>f.find(x=>x.type===t)?.value||"";
+    clockEl.innerHTML=`${g("hour")}:${g("minute")}:${g("second")}${showMs?"."+String(now%1000).padStart(3,"0"):""}<small>${g("dayPeriod")}</small>`;
+    const idx=Math.floor(now/60000), target=(idx%2===0?idx+2:idx+1)*60000, left=target-now;
+    const hit=now%120000<1500 && Math.floor(now/60000)%2===0;
+    box.className="precise"+(hit?" go":(left<=10000?" ready":""));
+    nextEl.textContent = hit ? "Even minute: add to cart now" : (left<=10000 ? "Get ready: even minute in " : "Next even minute in ")+ (showMs?(left/1000).toFixed(1):Math.ceil(left/1000))+"s";
+    if(hit) nextEl.textContent="Even minute: add to cart now";
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+
+// MSRP table and CAD/USD converter
+(function(){
+  // US MSRP from TCG price guides (Jul–Oct 2026); Canada MSRP from Canadian release listings (Oct 2026)
+  const MSRP=[
+    {name:"Booster pack", packs:1, us:4.49, ca:6.99, caNote:"sleeved"},
+    {name:"3-pack blister", packs:3, us:13.99, ca:null},
+    {name:"Booster bundle", packs:6, us:26.94, ca:36.99},
+    {name:"Elite Trainer Box", packs:9, us:49.99, ca:67.99},
+    {name:"Pokémon Center ETB", packs:11, us:59.99, ca:80.99, note:"Pokémon Center only"},
+    {name:"Booster box", packs:36, us:161.64, ca:218.99},
+  ];
+  const rateEl=document.getElementById("fxRate"), cadEl=document.getElementById("fxCad"), usdEl=document.getElementById("fxUsd");
+  const money=(v,c)=>v==null?"—":new Intl.NumberFormat("en-CA",{style:"currency",currency:c,currencyDisplay:"narrowSymbol"}).format(v);
+  const rate=()=>{ const r=parseFloat(rateEl.value); return r>0?r:0.7093; };
+  function table(){
+    const r=rate();
+    document.getElementById("msrpRows").innerHTML=MSRP.map(p=>`<tr><td>${p.name}${p.note?`<br><small>${p.note}</small>`:""}</td><td class="num">${p.packs}</td><td class="num">US ${money(p.us,"USD")}<br><small>${money(p.us/p.packs,"USD")}/pack</small></td><td class="num">CA ${money(p.us/r,"CAD")}</td><td class="num">${p.ca==null?"—":"CA "+money(p.ca,"CAD")+`<br><small>${money(p.ca/p.packs,"CAD")}/pack${p.caNote?" · "+p.caNote:""}</small>`}</td></tr>`).join("");
+  }
+  const r2=v=>Math.round(v*100)/100;
+  cadEl.addEventListener("input",()=>{ const v=parseFloat(cadEl.value); usdEl.value=isNaN(v)?"":r2(v*rate()); });
+  usdEl.addEventListener("input",()=>{ const v=parseFloat(usdEl.value); cadEl.value=isNaN(v)?"":r2(v/rate()); });
+  rateEl.addEventListener("input",()=>{ const v=parseFloat(cadEl.value); usdEl.value=isNaN(v)?"":r2(v*rate()); table(); });
+  usdEl.value=r2(parseFloat(cadEl.value)*rate());
+  table();
+})();
+
+// Expected drops, shared between everyone who opens the page
+const RETAILERS=[["Walmart Canada","ca"],["Walmart US","us"],["Target","us"],["Pokémon Center Canada","ca"],["Pokémon Center US","us"],["Costco Canada","ca"],["Costco US","us"],["Best Buy Canada","ca"],["Best Buy US","us"],["EB Games","ca"],["GameStop","us"],["Other (see note)",""]];
+const BOARD_URL="https://claude.ai/artifact/CG4VxKQafd88jwiLbSE89L";
+const RETAILER_URL={
+  "Walmart Canada":"https://www.walmart.ca/en/search?q=pokemon%20cards",
+  "Walmart US":"https://www.walmart.com/search?q=pokemon+cards",
+  "Target":"https://www.target.com/s?searchTerm=pokemon+cards",
+  "Pokémon Center Canada":"https://www.pokemoncenter.com/en-ca",
+  "Pokémon Center US":"https://www.pokemoncenter.com/en-us",
+  "Costco Canada":"https://www.costco.ca",
+  "Costco US":"https://www.costco.com",
+  "Best Buy Canada":"https://www.bestbuy.ca/en-ca/search?search=pokemon+cards",
+  "Best Buy US":"https://www.bestbuy.com/site/searchpage.jsp?st=pokemon+cards",
+  "EB Games":"https://www.ebgames.ca",
+  "GameStop":"https://www.gamestop.com"
+};
+function discordMsg(x){
+  const sec=Math.floor(x.at/1000);
+  let when;
+  if(x.tba){ const [y,mo,d]=String(x.date).split("-").map(Number); when=`<t:${Math.floor(Date.UTC(y,mo-1,d,18)/1000)}:D>, time TBA`; }
+  else when=`<t:${sec}:F> (<t:${sec}:R>)`;
+  const lines=[`**${x.retailer} drop expected** ${when}`];
+  if(x.note) lines.push(x.note);
+  if(RETAILER_URL[x.retailer]) lines.push(`<${RETAILER_URL[x.retailer]}>`);
+  return lines.join("\n");
+}
+const escH=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function tzToDate(tz,y,mo,d,min){
+  const want=Date.UTC(y,mo-1,d,Math.floor(min/60),min%60); let t=want;
+  for(let i=0;i<3;i++){ const p=parts(new Date(t),tz); t += want-Date.UTC(p.y,p.mo-1,p.d,p.h,p.mi); }
+  return t;
+}
+const tipState={db:null,user:null,canWrite:false,docs:[],names:{},confirm:null};
+const dSel=document.getElementById("dRetailer");
+dSel.innerHTML=RETAILERS.map(([n],i)=>`<option value="${i}">${n}</option>`).join("");
+const dForm=document.getElementById("dropForm"), addBtn=document.getElementById("addDropBtn"), dStatus=document.getElementById("dStatus");
+function fmtWhen(x){
+  if(x.tba){ const [y,mo,d]=x.date.split("-").map(Number); return new Intl.DateTimeFormat("en-US",{timeZone:"UTC",weekday:"short",month:"short",day:"numeric"}).format(Date.UTC(y,mo-1,d))+" · time not known yet"; }
+  return new Intl.DateTimeFormat("en-US",{timeZone:showTZ,weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}).format(x.at)+" "+tzName();
+}
+function renderTips(){
+  const el=document.getElementById("tips"), now=Date.now();
+  document.getElementById("dTz").textContent="("+tzName()+")";
+  const fT=t=>fTime(t);
+  const items=[];
+  // Regular windows in the next 7 days
+  for(const o of occ){
+    if(o.end<=now || o.start>now+7*864e5) continue;
+    const w=o.w, multi=w.links.length>1;
+    const name = multi ? escH(w.name) : `<a href="${w.links[0][1]}" target="_blank" rel="noopener">${escH(w.name)} ↗</a>`;
+    const extra = multi ? `<span class="ag-links">${w.links.map(([l,u])=>`<a href="${u}" target="_blank" rel="noopener">${escH(l.replace("Pokémon Center ","")||l)} ↗</a>`).join("")}</span>` : "";
+    items.push({t:o.start, end:o.end, kind:"window", flags:w.region, nameHTML:name+certTag(w.certainty)+extra});
+  }
+  // Expected drops
+  if(tipState.db){
+    for(const x of tipState.docs.map(d=>({id:d.id,...d.data()}))){
+      if(typeof x.at!=="number" || x.at<=now-(x.tba?864e5:3*36e5)) continue;
+      const rg=RETAILERS.find(r=>r[0]===x.retailer)?.[1];
+      const name=RETAILER_URL[x.retailer]?`<a href="${RETAILER_URL[x.retailer]}" target="_blank" rel="noopener">${escH(x.retailer)} ↗</a>`:escH(x.retailer);
+      items.push({t:x.at, kind:"tip", tba:!!x.tba, date:x.date, flags:rg?[rg]:[], nameHTML:name, x});
+    }
+  }
+  // Group by day in the chosen zone
+  const dayKey=t=>{ const p=parts(new Date(t),showTZ); return p.y+"-"+p.mo+"-"+p.d; };
+  const tipKey=x=>{ const [y,mo,d]=String(x.date).split("-").map(Number); return y+"-"+mo+"-"+d; };
+  const today=parts(new Date(),showTZ), days=[];
+  for(let i=0;i<7;i++){
+    const b=new Date(Date.UTC(today.y,today.mo-1,today.d+i));
+    days.push({key:b.getUTCFullYear()+"-"+(b.getUTCMonth()+1)+"-"+b.getUTCDate(), i, label:(i===0?"Today":i===1?"Tomorrow":DAY[b.getUTCDay()])+" · "+new Intl.DateTimeFormat("en-US",{timeZone:"UTC",month:"short",day:"numeric"}).format(b)});
+  }
+  const byDay=Object.fromEntries(days.map(d=>[d.key,[]]));
+  for(const it of items){ const k=it.tba?tipKey(it.x):dayKey(it.t); if(byDay[k]) byDay[k].push(it); }
+  const row=it=>{
+    const flags=it.flags.map(c=>FLAG_SVG[c]).join("");
+    let timeCol, pill="", side="", sub="", cls="ag-row";
+    if(it.kind==="window"){
+      const live=it.t<=now;
+      timeCol=`${fT(it.t)}<small>to ${fT(it.end)}</small>`;
+      pill=live?`<span class="pill live">LIVE · ends in ${dur((it.end-now)/1000)}</span>`:`<span class="pill ${it.t-now<3*36e5?"soon":""}">in ${dur((it.t-now)/1000)}</span>`;
+      if(live) cls+=" live";
+    } else {
+      const x=it.x, diff=(x.at-now)/1000, live=!x.tba&&diff<=0;
+      cls+=" expected"+(live?" live":"");
+      timeCol=x.tba?`TBA<small>time not known</small>`:`${fT(x.at)}<small>expected</small>`;
+      if(!x.tba) pill=live?`<span class="pill live">Happening now</span>`:`<span class="pill ${diff<3*3600?"soon":""}">in ${dur(diff)}</span>`;
+      const who=tipState.names[x.by]?"Added by "+escH(tipState.names[x.by]):"";
+      sub=[x.note?escH(x.note):"",who].filter(Boolean).join(" · ");
+      side=`<button class="btn sm" type="button" data-ts="${escH(x.id)}">Copy for Discord</button>`+(tipState.canWrite?`<button class="btn sm" type="button" data-del="${escH(x.id)}">${tipState.confirm===x.id?"Confirm remove":"Remove"}</button>`:"");
+    }
+    return `<div class="${cls}"><div class="ag-time">${timeCol}</div><div class="ag-main"><div class="ag-name">${flags}${it.nameHTML}${it.kind==="tip"?`<span class="tag">Expected</span>`:""}</div>${sub?`<small>${sub}</small>`:""}${side?`<div class="ag-actions">${side}</div>`:""}</div><div class="ag-side">${pill}</div></div>`;
+  };
+  el.innerHTML=days.map(d=>{
+    const list=byDay[d.key].sort((a,b)=>(a.tba?Infinity:a.t)-(b.tba?Infinity:b.t));
+    if(!list.length && d.i>1) return "";
+    return `<div class="ag-day"><div class="ag-date">${d.label}</div>${list.length?list.map(row).join(""):`<div class="ag-empty">Nothing scheduled</div>`}</div>`;
+  }).join("") + (tipState.db?"":`<p class="note">Expected drops added by friends only show on the Claude-hosted version of this page.</p>`);
+}
+document.getElementById("tips").addEventListener("click",async e=>{
+  const tb=e.target.closest("[data-ts]");
+  if(tb){
+    const x=(window.__tipDocs||[]).find(d=>d.id===tb.dataset.ts); if(!x) return;
+    const code=discordMsg(x);
+    const done=t=>{ tb.textContent=t; setTimeout(()=>tb.textContent="Copy for Discord",2500); };
+    try{ await navigator.clipboard.writeText(code); done("Copied!"); }
+    catch(_){ const ta=document.createElement("textarea"); ta.value=code; ta.style.cssText="position:fixed;opacity:0"; document.body.appendChild(ta); ta.select(); let ok=false; try{ ok=document.execCommand("copy"); }catch(__){} ta.remove(); done(ok?"Copied!":code); }
+    return;
+  }
+  const b=e.target.closest("[data-del]"); if(!b) return;
+  const id=b.dataset.del;
+  if(tipState.confirm!==id){ tipState.confirm=id; renderTips(); return; }
+  tipState.confirm=null;
+  try{ await tipState.db.collection("drops").doc(id).delete(); }catch(err){ renderTips(); }
+});
+addBtn.onclick=()=>{ dForm.hidden=false; addBtn.hidden=true; const t=parts(new Date(),showTZ); document.getElementById("dDate").value=`${t.y}-${String(t.mo).padStart(2,"0")}-${String(t.d).padStart(2,"0")}`; dSel.focus(); };
+document.getElementById("dCancel").onclick=()=>{ dForm.reset(); dForm.hidden=true; addBtn.hidden=false; dStatus.textContent=""; };
+dForm.addEventListener("submit",async e=>{
+  e.preventDefault();
+  const date=document.getElementById("dDate").value, time=document.getElementById("dTime").value;
+  if(!date) return;
+  const [y,mo,d]=date.split("-").map(Number), tba=!time;
+  const at=tzToDate(showTZ,y,mo,d,tba?0:toMin(time));
+  const body={retailer:RETAILERS[+dSel.value][0], at, tba, date, note:document.getElementById("dNote").value.trim(), created:Date.now()};
+  try{ const id=tipState.user&&await tipState.user.id(); if(id) body.by=id; }catch(_){}
+  dStatus.textContent="Saving…";
+  try{
+    await tipState.db.collection("drops").add(body);
+    dForm.reset(); dForm.hidden=true; addBtn.hidden=false; dStatus.textContent="";
+  }catch(err){
+    dStatus.textContent = err&&err.code==="invalid_argument" ? "You don't have permission to add drops. Ask the page owner for Contributor access." : "Couldn't save the drop. Try again in a moment.";
+  }
+});
+sel.addEventListener("change",renderTips);
+setInterval(renderTips,30000);
+renderTips();
+(async()=>{
+  const db=window.claude?.use ? await window.claude.use("db") : null;
+  if(!db){ renderTips(); return; }
+  tipState.db=db;
+  const user=await window.claude.use("user"); tipState.user=user;
+  let can=null; try{ can=user?await user.can("data.write"):null; }catch(_){}
+  tipState.canWrite=can!==false;
+  addBtn.hidden=!tipState.canWrite;
+  db.collection("drops").onSnapshot(async snap=>{
+    tipState.docs=snap.docs.filter(d=>d.exists);
+    window.__tipDocs=tipState.docs.map(d=>({id:d.id,...d.data()}));
+    lastKey="";
+    renderTips();
+    const ids=[...new Set(tipState.docs.map(d=>d.data().by).filter(Boolean))];
+    if(user&&ids.length){ try{ const ps=await user.profiles(ids); for(const id of ids) tipState.names[id]=ps[id]?.name||""; renderTips(); }catch(_){} }
+  },()=>{ document.getElementById("tips").innerHTML=`<p class="note">Expected drops couldn't load. Reload the page to try again.</p>`; });
+})();
+</script>
