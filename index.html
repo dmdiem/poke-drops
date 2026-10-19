@@ -197,7 +197,8 @@ footer{color:var(--muted);font-size:13px}
   </header>
 
   <section class="section">
-    <div class="sechead"><h2>Coming up</h2><button class="btn primary" type="button" id="addDropBtn" hidden>Add expected drop</button></div>
+    <div class="sechead"><h2>Coming up</h2><button class="btn primary" type="button" id="addDropBtn">Add expected drop</button></div>
+    <p class="note addmsg" id="addMsg" hidden></p>
     <form class="dropform" id="dropForm" hidden>
       <div class="field"><label for="dRetailer">Retailer</label><select id="dRetailer"></select></div>
       <div class="field"><label for="dDate">Date</label><input type="date" id="dDate" required></div>
@@ -617,7 +618,12 @@ document.getElementById("tips").addEventListener("click",async e=>{
   tipState.confirm=null;
   try{ await tipState.db.collection("drops").doc(id).delete(); }catch(err){ renderTips(); }
 });
-addBtn.onclick=()=>{ dForm.hidden=false; addBtn.hidden=true; const t=parts(new Date(),showTZ); document.getElementById("dDate").value=`${t.y}-${String(t.mo).padStart(2,"0")}-${String(t.d).padStart(2,"0")}`; dSel.focus(); };
+addBtn.onclick=()=>{
+  const msg=document.getElementById("addMsg");
+  if(!tipState.db){ msg.innerHTML=`Adding drops needs the shared version of the board. <a href="${BOARD_URL}" target="_blank" rel="noopener">Open it here ↗</a>`; msg.hidden=false; return; }
+  if(!tipState.canWrite){ msg.textContent="You can view drops but not add them. Ask the board owner for Contributor access."; msg.hidden=false; return; }
+  msg.hidden=true;
+  dForm.hidden=false; addBtn.hidden=true; const t=parts(new Date(),showTZ); document.getElementById("dDate").value=`${t.y}-${String(t.mo).padStart(2,"0")}-${String(t.d).padStart(2,"0")}`; dSel.focus(); };
 document.getElementById("dCancel").onclick=()=>{ dForm.reset(); dForm.hidden=true; addBtn.hidden=false; dStatus.textContent=""; };
 dForm.addEventListener("submit",async e=>{
   e.preventDefault();
@@ -652,7 +658,6 @@ renderTips();
     tipState.user=user;
     let can=null; try{ can=user?await user.can("data.write"):null; }catch(_){}
     tipState.canWrite=can!==false;
-    addBtn.hidden=!tipState.canWrite;
     renderTips();
     db.collection("drops").onSnapshot(async snap=>{
       try{
