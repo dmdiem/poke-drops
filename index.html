@@ -639,21 +639,32 @@ sel.addEventListener("change",renderTips);
 setInterval(renderTips,30000);
 renderTips();
 (async()=>{
-  const db=window.claude?.use ? await window.claude.use("db") : null;
-  if(!db){ renderTips(); return; }
-  tipState.db=db;
-  const user=await window.claude.use("user"); tipState.user=user;
-  let can=null; try{ can=user?await user.can("data.write"):null; }catch(_){}
-  tipState.canWrite=can!==false;
-  addBtn.hidden=!tipState.canWrite;
-  db.collection("drops").onSnapshot(async snap=>{
-    tipState.docs=snap.docs.filter(d=>d.exists);
-    window.__tipDocs=tipState.docs.map(d=>({id:d.id,...d.data()}));
-    lastKey="";
+  const tipsEl=document.getElementById("tips");
+  const fail=msg=>{ tipState.db=null; renderTips(); tipsEl.insertAdjacentHTML("beforeend",`<p class="note">Expected drops couldn't load: ${escH(msg)}. Reload the page to try again.</p>`); };
+  try{
+    // Wait briefly for the Claude viewer bridge; absent entirely on GitHub
+    for(let i=0;i<20 && !window.claude?.use;i++) await new Promise(r=>setTimeout(r,100));
+    if(!window.claude?.use){ renderTips(); return; }
+    const db=await window.claude.use("db");
+    if(!db){ fail("the shared list isn't available in this view"); return; }
+    tipState.db=db;
+    let user=null; try{ user=await window.claude.use("user"); }catch(_){}
+    tipState.user=user;
+    let can=null; try{ can=user?await user.can("data.write"):null; }catch(_){}
+    tipState.canWrite=can!==false;
+    addBtn.hidden=!tipState.canWrite;
     renderTips();
-    const ids=[...new Set(tipState.docs.map(d=>d.data().by).filter(Boolean))];
-    if(user&&ids.length){ try{ const ps=await user.profiles(ids); for(const id of ids) tipState.names[id]=ps[id]?.name||""; renderTips(); }catch(_){} }
-  },()=>{ document.getElementById("tips").innerHTML=`<p class="note">Expected drops couldn't load. Reload the page to try again.</p>`; });
+    db.collection("drops").onSnapshot(async snap=>{
+      try{
+        tipState.docs=snap.docs.filter(d=>d.exists);
+        window.__tipDocs=tipState.docs.map(d=>({id:d.id,...d.data()}));
+        lastKey="";
+        renderTips();
+      }catch(err){ console.error(err); fail("display error"); return; }
+      const ids=[...new Set(tipState.docs.map(d=>d.data().by).filter(Boolean))];
+      if(user&&ids.length){ try{ const ps=await user.profiles(ids); for(const id of ids) tipState.names[id]=ps[id]?.name||""; renderTips(); }catch(_){} }
+    },err=>fail(err&&err.code?err.code:"connection error"));
+  }catch(err){ console.error(err); fail(err&&err.code?err.code:String(err&&err.message||err)); }
 })();
 </script>
 
