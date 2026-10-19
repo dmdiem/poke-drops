@@ -111,6 +111,9 @@ a.shop .info strong{font-weight:600}
 .shipwrap{display:inline-flex;align-items:center;gap:10px}
 .ship{font-family:var(--mono);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--live-soft);color:var(--live);white-space:nowrap}
 .ship.limited{background:var(--soon-soft);color:var(--soon)}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand-text{display:grid;gap:6px;min-width:0}
+.mascot{width:clamp(96px,22vw,150px);height:auto;flex:none;border-radius:12px}
 .sechead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .dropform{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
 .dropform .wide{grid-column:1/-1}
@@ -176,8 +179,11 @@ footer{color:var(--muted);font-size:13px}
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Card drop tracker · US + Canada</div>
-    <h1>Drop Window Board</h1>
+    <div class="brand">
+      <div class="brand-text"><div class="eyebrow">Card drop tracker · US + Canada</div>
+      <h1>Drop Window Board</h1></div>
+      <img class="mascot" src="mascot.gif" alt="Egg mascot holding a 30th Celebration Elite Trainer Box" width="263" height="202">
+    </div>
     <div class="tzbar">
       <label for="tzSelect">Showing times in</label>
       <select id="tzSelect"></select>
