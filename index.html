@@ -272,7 +272,8 @@ select,input,textarea{border-radius:12px;border-width:2px}
 </div>
 
 <script>
-const MT = "America/Edmonton";
+// Base zone the schedule is written in. US Mountain, so windows follow US retailers' clock changes.
+const MT = "America/Denver";
 const DAY = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 const SHORT = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 // Edit these to change the schedule. Days: 0 = Sunday … 6 = Saturday. Times are Calgary time, 24h.
@@ -291,14 +292,14 @@ const RANDOM = { name:"Walmart Canada", region:["ca"], note:"No set pattern. Res
   links:[["Walmart CA","https://www.walmart.ca/en/search?q=pokemon%20cards"]] };
 
 const ZONES = [
-  { id:"van", flag:"🇨🇦", tz:"Etc/GMT+7", label:"Pacific – Vancouver", fixed:"UTC−7 year-round" },
+  { id:"van", flag:"🇨🇦", tz:"Etc/GMT+7", label:"Pacific – Vancouver", fixed:true, abbr:"UTC−7" },
   { id:"ca", flag:"🇺🇸",  tz:"America/Los_Angeles", label:"Pacific – California" },
-  { id:"mt", flag:"🇨🇦",  tz:"America/Edmonton", label:"Mountain – Calgary" },
+  { id:"mt", flag:"🇨🇦",  tz:"Etc/GMT+6", label:"Alberta Time – Calgary", fixed:true, abbr:"ABT, UTC−6" },
   { id:"ct", flag:"🇺🇸",  tz:"America/Chicago", label:"Central – Texas" },
   { id:"et", flag:"🇨🇦",  tz:"America/Toronto", label:"Eastern – Toronto" },
 ];
 const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
-const GUESS = {"America/Vancouver":"van","America/Los_Angeles":"ca","America/Edmonton":"mt","America/Denver":"mt","America/Chicago":"ct","America/Toronto":"et","America/New_York":"et"};
+const GUESS = {"America/Vancouver":"van","America/Los_Angeles":"ca","America/Edmonton":"mt","America/Regina":"mt","Etc/GMT+6":"mt","America/Chicago":"ct","America/Toronto":"et","America/New_York":"et"};
 if(!GUESS[LOCAL_TZ]){ ZONES.push({ id:"local", flag:"📍", tz:LOCAL_TZ, label:"Local time ("+(/^Etc\/GMT[+-]\d+$/.test(LOCAL_TZ) ? "UTC"+(LOCAL_TZ.includes("+")?"−":"+")+LOCAL_TZ.split(/[+-]/).pop()+", fixed offset" : LOCAL_TZ.split("/").pop().replace(/_/g," "))+")" }); GUESS[LOCAL_TZ]="local"; }
 let zone = ZONES.find(z=>z.id===GUESS[LOCAL_TZ]);
 try{ const saved=localStorage.getItem("dropboard-zone"); zone=ZONES.find(z=>z.id===saved)||zone; }catch(e){}
@@ -329,7 +330,7 @@ function occurrences(){
 }
 const fTime = t => new Intl.DateTimeFormat("en-US",{timeZone:showTZ,hour:"numeric",minute:"2-digit"}).format(t);
 const fWd = t => parts(new Date(t),showTZ).wd;
-const tzName = () => zone.fixed ? "UTC−7" : new Intl.DateTimeFormat("en-US",{timeZone:showTZ,timeZoneName:"short"}).formatToParts(new Date()).find(x=>x.type==="timeZoneName").value;
+const tzName = () => zone.abbr ? zone.abbr : new Intl.DateTimeFormat("en-US",{timeZone:showTZ,timeZoneName:"short"}).formatToParts(new Date()).find(x=>x.type==="timeZoneName").value;
 function dur(s){ s=Math.max(0,Math.floor(s)); const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60), x=s%60;
   if(d) return d+"d "+h+"h "+m+"m"; if(h) return h+"h "+String(m).padStart(2,"0")+"m"; return m+"m "+String(x).padStart(2,"0")+"s"; }
 function daysLabel(ds){
@@ -486,7 +487,7 @@ document.getElementById("shopCols").innerHTML=["ca","us"].map(c=>`
   syncBtn();
   function frame(){
     const now=Date.now();
-    if(zone.id!==lastZone){ zEl.textContent="· "+zone.label+" ("+(zone.fixed?"UTC−7, no clock changes":tzName())+")"; lastZone=zone.id; }
+    if(zone.id!==lastZone){ zEl.textContent="· "+zone.label+" ("+(zone.fixed?tzName()+", no clock changes":tzName())+")"; lastZone=zone.id; }
     const f=new Intl.DateTimeFormat("en-US",{timeZone:showTZ,hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true}).formatToParts(now);
     const g=t=>f.find(x=>x.type===t)?.value||"";
     clockEl.innerHTML=`${g("hour")}:${g("minute")}:${g("second")}${showMs?"."+String(now%1000).padStart(3,"0"):""}<small>${g("dayPeriod")}</small>`;
